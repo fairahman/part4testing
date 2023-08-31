@@ -1,6 +1,6 @@
 const listHelper = require('../utils/list_helper')
 
-describe('most liked blog', () => {
+describe('author with most likes', () => {
   const blogs = [
     {
       _id: "5a422a851b54a676234d17f7",
@@ -51,18 +51,16 @@ describe('most liked blog', () => {
       __v: 0
     }  
   ]
-
-  test('returns the blog with the most likes, if there are more than one then return any blog with most likes', () => {
-    const result = listHelper.mostLikedBlog(blogs)
+  test('returns an object with the name of the author with most likes and the number of likes', () => { 
+    const result = listHelper.mostLikes(blogs)
     expect(result).toEqual({
-      title: "Canonical string reduction",
       author: "Edsger W. Dijkstra",
-      likes: 12
+      likes: 17
     })
   })
 
-  test('returns string "there are no blogs" when an empty array is passed', () => {
-    const result = listHelper.mostLikedBlog([])
-    expect(result).toBe("there are no blogs")
-  } )
+  test('returns a string "no blogs to evaluate" when an empty array is passed', () => {
+    expect(listHelper.mostLikes([])).toEqual('no blogs to evaluate')
+  })
+  
 })
