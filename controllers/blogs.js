@@ -1,6 +1,8 @@
+const jwt = require('jsonwebtoken')
 const Blog = require('../models/blog')
 const User = require('../models/user')
 const blogsRouter = require('express').Router()
+const config = require('../utils/config')
 
 blogsRouter.get('/', async (request, response) => {
   const blogs = await Blog.find({}).populate('user', { username:1, name:1 })
@@ -8,26 +10,49 @@ blogsRouter.get('/', async (request, response) => {
 })
 
 blogsRouter.post('/', async (request, response, next) => {
-  function shuffleArray(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [array[i], array[j]] = [array[j], array[i]] // Swap elements
+  // function shuffleArray(array) {
+  //   for (let i = array.length - 1; i > 0; i--) {
+  //     const j = Math.floor(Math.random() * (i + 1));
+  //     [array[i], array[j]] = [array[j], array[i]] // Swap elements
+  //   }
+  //   return array[Math.floor(Math.random() * array.length)]
+  // }
+  const getTokenFrom = (request) => {
+    const authorization = request.headers.authorization
+    console.log('authorization:', authorization)
+    // console.log(authorization.trim().startsWith('bearer'))
+    console.log(authorization.startsWith('Bearer '))
+    if (authorization && authorization.startsWith('Bearer ')) {
+      console.log('in heyaa')
+      return authorization.replace('Bearer ', '')
     }
-    return array[Math.floor(Math.random() * array.length)]
+    return null
   }
-
   try {
-    const { title, author, likes, url } = request.body
-    const users = await User.find({})
-    const user = shuffleArray(users)
-    const userId = user._id
-    console.log('chosenUser:', userId)
-    request.body.likes ? null : request.body.likes = 0
-    const blog = new Blog({ title, author, likes, url, user: userId })
+    const { title, author, url } = request.body
+
+    // const users = await User.find({})
+    // const user = shuffleArray(users)
+    // const userId = user._id
+    const likes = request.body.likes !== undefined ? request.body.likes :  0
+    const token = getTokenFrom(request)
+    console.log(token)
+    const decodedToken = jwt.verify(token, config.SECRET)
+    console.log('decodedToken', decodedToken)
+    if (!decodedToken.id) {
+      return response.status(401).json({ error: 'invalid token' })
+    }
+    const user = await User.findById(decodedToken.id)
+    console.log('user', user)
+    const blog = new Blog({ title, author, likes, url, user: user.id })
+    console.log('blogg:', blog)
     const savedBlog = await blog.save()
     user.blogs.push(savedBlog._id)
+    console.log('updated user:', user)
     await user.save()
-    return response.status(201).json(savedBlog)
+    // // console.log('updated user:', user)
+    // return response.status(201).json(savedBlog)
+    response.json(savedBlog)
   }
   catch(error) {
     console.log(error)

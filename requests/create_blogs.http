@@ -1,0 +1,9 @@
+POST http://localhost:3003/api/blogs
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Im1yVW5jaGFpbmVkIiwiaWQiOiI2NGYwMGU2OWRkNzVjM2VhZjYxZDdmZjciLCJpYXQiOjE2OTM1MDkyNDQsImV4cCI6MTY5MzUwOTMwNH0.H1huioQ3_5eD7TBRp0GQ41H16mEVb8ileuRCkMpV-WM
+
+{
+    "title": "mrolympia",
+    "url": "blogs.com",
+    "author": "biscuitOliva"
+}

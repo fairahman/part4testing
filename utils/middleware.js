@@ -9,6 +9,14 @@ const errorHandler = (err, req, res, next) => {
   if (err.name === 'ValidationError') {
     return res.status(400).send({ error: 'missing title or url' })
   }
+  if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
+    return res.status(401).json({ error: err.message })
+  }
+
+}
+
+const tokenExtractor = (req, res, next) => {
+  const authorization = req.headers.authorization
 }
 module.exports = {
   unknownroute,
