@@ -8,11 +8,11 @@ const mongoose = require('mongoose')
 describe('when there is initially one user in db', () => {
   beforeEach(async () => {
     await User.deleteMany({})
-    const passwordHash =  await bcrypt.hash('jackcena', 10)
+    const passwordHash =  await bcrypt.hash('weirdniga', 10)
     const newUser = new User({
-      username: 'rocky',
+      username: 'mrUnchained',
       passwordHash,
-      new: 'jacky'
+      name: 'biscuitOliva'
     })
     await newUser.save()
   })

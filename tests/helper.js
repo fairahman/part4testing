@@ -1,11 +1,19 @@
 const Blog = require('../models/blog')
 const User = require('../models/user')
-const initialBlogs = [{
-  title: 'naruto stories',
-  author: 'jibikawa',
-  url: 'dontKnow.com',
-  likes: 64
-}]
+const initialBlogs = [
+  {
+    title: 'naruto stories',
+    author: 'jibikawa',
+    url: 'blogs.com',
+    likes: 64
+  },
+  {
+    title: 'naruto stories',
+    author: 'reishu',
+    url: 'blogs.com',
+    likes: 60
+  }
+]
 
 const blogsInDb = async () => {
   const blogs = await Blog.find({})

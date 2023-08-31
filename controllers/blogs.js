@@ -17,17 +17,7 @@ blogsRouter.post('/', async (request, response, next) => {
   //   }
   //   return array[Math.floor(Math.random() * array.length)]
   // }
-  const getTokenFrom = (request) => {
-    const authorization = request.headers.authorization
-    console.log('authorization:', authorization)
-    // console.log(authorization.trim().startsWith('bearer'))
-    console.log(authorization.startsWith('Bearer '))
-    if (authorization && authorization.startsWith('Bearer ')) {
-      console.log('in heyaa')
-      return authorization.replace('Bearer ', '')
-    }
-    return null
-  }
+
   try {
     const { title, author, url } = request.body
 
@@ -35,7 +25,7 @@ blogsRouter.post('/', async (request, response, next) => {
     // const user = shuffleArray(users)
     // const userId = user._id
     const likes = request.body.likes !== undefined ? request.body.likes :  0
-    const token = getTokenFrom(request)
+    const token = request.token
     console.log(token)
     const decodedToken = jwt.verify(token, config.SECRET)
     console.log('decodedToken', decodedToken)

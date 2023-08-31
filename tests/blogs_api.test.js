@@ -65,7 +65,18 @@ describe('viewing a specific blog', () => {
   })
 })
 describe('addition of a new blog', () => {
-  test('succeeds when provided valid data', async () => {
+  const user = {
+    "username": "mrUnchained",
+    "name": "biscuitOliva",
+    "password": "weirdniga"
+  }
+  const newBlog = {
+    "title": "unchainedChronicles",
+    "url": "blogs.com",
+    "author": "biscuitOliva"
+
+  }
+  test('fails when token is missing', async () => {
     const newBlog = {
       author: 'pigeon',
       title: 'sky dreams',
@@ -75,12 +86,8 @@ describe('addition of a new blog', () => {
     const response = await api
       .post('/api/blogs')
       .send(newBlog)
-      .expect(201)
-
-    const blogsInDataBase = await Blog.find({})
-    const blogTitles = blogsInDataBase.map(blog => blog.title)
-    expect(blogTitles).toContain(newBlog.title)
-    expect(blogsInDataBase).toHaveLength(helper.initialBlogs.length + 1)
+      .expect(401)
+    expect(response.body.error).toBe('jwt must be provided')
   })
 
   test('likes property defaults to 0 when it is missing in request', async () => {
@@ -99,7 +106,7 @@ describe('addition of a new blog', () => {
 
   })
 
-  test('returns "400 bad request" if title or url is missing from reques/blog', async () => {
+  test('returns "400 bad request" if title or url is missing from request/blog', async () => {
     const blog = {
       title: 'pokemon',
       author: 'janina',
@@ -107,11 +114,38 @@ describe('addition of a new blog', () => {
     }
     const response = await api
       .post('/api/blogs')
+      .send(blog)
       .expect(400)
   })
+
+  test('succeeds when a valid blog data and token is provided', async () => {
+
+    const loginResponse = await api
+      .post('/api/login')
+      .send(user)
+      .expect(200)
+
+    expect(loginResponse.body.token).toBeDefined()
+
+    const token = loginResponse.body.token
+    const blogCreatingResponse = await api
+      .post('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
+      .send(newBlog)
+      .expect(200)
+    console.log(blogCreatingResponse.body)
+    expect(blogCreatingResponse.body).toMatchObject(newBlog)
+
+    const latestBlogs = await Blog.find({})
+    const blogTitles = latestBlogs.map(blog => blog.title)
+    expect(blogTitles).toContain(blogCreatingResponse.body.title)
+    expect(latestBlogs).toHaveLength(helper.initialBlogs.length + 1)
+
+  })
+
 })
 
-describe('deletion of a note', () => {
+describe('deletion of a blog', () => {
   test('succeeds with status code 204 if id is valid', async () => {
     const allBlogs = await Blog.find({})
 
@@ -134,7 +168,7 @@ describe('deletion of a note', () => {
   test('fails with status code 404 if valid formatted id is given but blog is not found', async() => {
     const blogs = await Blog.find({})
     const validId = blogs[0].id
-  
+
     console.log('validId:', validId)
     await api
       .delete(`/api/blogs/${validId}`)
