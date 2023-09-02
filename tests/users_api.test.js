@@ -10,9 +10,9 @@ describe('when there is initially one user in db', () => {
     await User.deleteMany({})
     const passwordHash =  await bcrypt.hash('weirdniga', 10)
     const newUser = new User({
-      username: 'mrUnchained',
+      username: 'spiderMan',
       passwordHash,
-      name: 'biscuitOliva'
+      name: 'peterParker'
     })
     await newUser.save()
   })

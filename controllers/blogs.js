@@ -3,6 +3,7 @@ const Blog = require('../models/blog')
 const User = require('../models/user')
 const blogsRouter = require('express').Router()
 const config = require('../utils/config')
+const middleware = require('../utils/middleware')
 
 blogsRouter.get('/', async (request, response) => {
   const blogs = await Blog.find({}).populate('user', { username:1, name:1 })
@@ -25,14 +26,7 @@ blogsRouter.post('/', async (request, response, next) => {
     // const user = shuffleArray(users)
     // const userId = user._id
     const likes = request.body.likes !== undefined ? request.body.likes :  0
-    const token = request.token
-    console.log(token)
-    const decodedToken = jwt.verify(token, config.SECRET)
-    console.log('decodedToken', decodedToken)
-    if (!decodedToken.id) {
-      return response.status(401).json({ error: 'invalid token' })
-    }
-    const user = await User.findById(decodedToken.id)
+    const user = request.user
     console.log('user', user)
     const blog = new Blog({ title, author, likes, url, user: user.id })
     console.log('blogg:', blog)
@@ -64,14 +58,25 @@ blogsRouter.get('/:id', async (request, response, next) => {
 
 })
 
-blogsRouter.delete('/:id', async (request, response, next) => {
+blogsRouter.delete('/', async (request, response, next) => {
   try {
-    const deletedBlog  = await Blog.findByIdAndDelete(request.params.id)
-    if (deletedBlog) {
-      response.status(204).end()
-      return
-    }
-    response.status(404).send({ error: 'blog not found' })
+    const user = request.user
+    const blogs = user.blogs
+    console.log('blogs:', blogs)
+    const deletingIndex = Math.floor(Math.random() * user.blogs.length)
+    const deletedBlogId = blogs[deletingIndex]
+    console.log('blogToDelete', await Blog.findById(deletedBlogId))
+    const deletedBlog = await Blog.findByIdAndDelete(deletedBlogId)
+    user.blogs = blogs.slice(0, deletingIndex).concat(blogs.slice(deletingIndex + 1))
+    console.log('new user.blogs', user.blogs)
+    await user.save()
+    response.send(deletedBlog)
+    // const deletedBlog  = await Blog.findByIdAndDelete(request.params.id)
+    // if (deletedBlog) {
+    //   response.status(204).end()
+    //   return
+    // }
+    // response.status(404).send({ error: 'blog not found' })
   }
   catch(error) {
     console.log('error:', error)

@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
-
+const bcrypt = require('bcrypt')
+const User = require('../models/user')
 const supertest = require('supertest')
 const app = require('../app')
 
@@ -13,6 +14,16 @@ beforeEach(async () => {
     const blogObj = new Blog(blog)
     await blogObj.save()
   }
+  await User.deleteMany({})
+  const passwordHash = await bcrypt.hash('weirdniga', 10)
+  const user = new User ({
+    username: 'mrUnchained',
+    name: 'biscuitOliva',
+    passwordHash
+  })
+  await user.save()
+
+
 })
 describe('when there is initially some blogs saved', () => {
   test('returns correct number of blogs', async () => {
@@ -36,7 +47,7 @@ describe('when there is initially some blogs saved', () => {
 describe('viewing a specific blog', () => {
   test('succeeds with a valid id', async () => {
     const blogs = await Blog.find({})
-     console.log(blogs)
+    console.log(blogs)
     const id = blogs[0].id
     const response = await api
       .get(`/api/blogs/${id}`)
@@ -65,17 +76,11 @@ describe('viewing a specific blog', () => {
   })
 })
 describe('addition of a new blog', () => {
-  const user = {
-    "username": "mrUnchained",
-    "name": "biscuitOliva",
-    "password": "weirdniga"
-  }
-  const newBlog = {
-    "title": "unchainedChronicles",
-    "url": "blogs.com",
-    "author": "biscuitOliva"
-
-  }
+  // const user = {
+  //   "username": "mrUnchained",
+  //   "name": "biscuitOliva",
+  //   "password": "weirdniga"
+  // }
   test('fails when token is missing', async () => {
     const newBlog = {
       author: 'pigeon',
@@ -86,8 +91,8 @@ describe('addition of a new blog', () => {
     const response = await api
       .post('/api/blogs')
       .send(newBlog)
-      .expect(401)
-    expect(response.body.error).toBe('jwt must be provided')
+      .expect(400)
+    expect(response.body.error).toBe('missing token')
   })
 
   test('likes property defaults to 0 when it is missing in request', async () => {
@@ -120,9 +125,14 @@ describe('addition of a new blog', () => {
 
   test('succeeds when a valid blog data and token is provided', async () => {
 
+    const  newBlog = {
+      title: 'jail monarch',
+      author: 'biscuitOliva',
+      url: 'blogs.com'
+    }
     const loginResponse = await api
       .post('/api/login')
-      .send(user)
+      .send({ username: 'mrUnchained', password: 'weirdniga' })
       .expect(200)
 
     expect(loginResponse.body.token).toBeDefined()
@@ -146,14 +156,41 @@ describe('addition of a new blog', () => {
 })
 
 describe('deletion of a blog', () => {
-  test('succeeds with status code 204 if id is valid', async () => {
-    const allBlogs = await Blog.find({})
+  test('succeeds with status code 204 if token is provided and valid', async () => {
+    // const allBlogs = await Blog.find({})
+    const loginResponse = await api
+      .post('/api/login')
+      .send({ username: 'mrUnchained', password: 'weirdniga' })
+      .expect(200)
+    const token = loginResponse.body.token
+    const userUnchained = await User.findOne({ username: 'mrUnchained' })
+    console.log(userUnchained)
+    const newBlog = new Blog({
+      title: 'biscut ar cha',
+      author: 'biscuitOliva',
+      url: 'blogs.com',
+      likes: 23,
+      user: userUnchained._id
+    })
 
-    await api
-      .delete(`/api/blogs/${allBlogs[0].id}`)
-      .expect(204)
-    const remainingBlogs = await Blog.find({})
-    expect(remainingBlogs).not.toContainEqual(allBlogs[0])
+
+    const savedBlog =  await newBlog.save()
+    userUnchained.blogs.push(savedBlog._id)
+    await userUnchained.save()
+    const response = await api
+      .delete('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
+      .send()
+      .expect(200)
+    expect(response.body).toMatchObject({
+      title: 'biscut ar cha',
+      author: 'biscuitOliva',
+      url: 'blogs.com',
+      likes: 23,
+    })
+    // const remainingBlogs = await Blog.find({})
+    // console.log('response:', response.body)
+    // expect(remainingBlogs).toContainEqual(response.body)
   })
 
   test('fails with status code 400 if id is invalid', async () => {
